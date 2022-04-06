@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const userRoutes = require('./routes/mixtapeRoutes')
+const userRoutes = require('./routes/userRoutes')
 var querystring = require('querystring');
 var request = require('request'); // "Request" library
 var cors = require('cors');
