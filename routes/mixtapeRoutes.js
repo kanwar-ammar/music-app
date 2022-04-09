@@ -2,20 +2,17 @@ const express = require("express");
 var router = express.Router();
 const Mixtape = require("../models/mixtapeModel");
 
-
-const allTracks=[]
-
 router.post("/createMixtape",async function(req,res){
   console.log(req.body)
-  const {title,description} = req.body
+  const {title,description,tracks} = req.body
   const newMixtape = new Mixtape({
    title:title,
    description:description,
-   tracks:allTracks
+   tracks:tracks
   })
   newMixtape.save()
   res.json({
-    newMixtape
+    "message":"new mixtape created"
   })
 })
 
