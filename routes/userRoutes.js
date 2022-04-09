@@ -3,7 +3,6 @@ var router = express.Router();
 const User = require("../models/userModel");
 
 router.post("/follow",async function(req,res){
-    console.log(req.user)
     console.log("follow")
     const {userId} = req.body
     const user = await User.findOne({userId})
