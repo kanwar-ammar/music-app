@@ -89,7 +89,7 @@ var generateRandomString = function(length) {
             console.log("user is already registered, access token replaced")
             spotifyUser.spotifyAccessToken = access_token
             spotifyUser.save()
-            res.redirect('/')
+            res.redirect('http://music-webapp.s3-website.eu-west-2.amazonaws.com/')
           }else{
           //  save user data here
            const user = new User({
@@ -104,10 +104,9 @@ var generateRandomString = function(length) {
            user.save()
            req.user = user
            ///////
-           res.redirect('/');
+           res.redirect('http://music-webapp.s3-website.eu-west-2.amazonaws.com/');
           }
           });
-
 
         } else {
           res.redirect('/#' +
@@ -119,40 +118,24 @@ var generateRandomString = function(length) {
     }
   });
 
-
-
 router.get("/userPlaylists",async function(req,res){
     const {userId} = req.body
     const user = await User.findOne({userSpotifyId:userId})
     var access_tokenin = user.spotifyAccessToken
     const refresh_token = user.spotifyRefreshToken
   
-  //  if uncommenting this also uncomment the timeout function below
-      //  var authOptions = {
-      //   url: 'https://accounts.spotify.com/api/token',
-      //   headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-      //   form: {
-      //     grant_type: 'refresh_token',
-      //     refresh_token: refresh_token
-      //   },
-      //   json: true
-      // };
-  
-      // request.post(authOptions, function(error, response, body) {
-      //   if (!error && response.statusCode === 200) {
-      //     var access_token = body.access_token;
-      //     access_tokenin = access_token
-      //   }
-      // })
-  
     let allTracks =[] //all tracks of user with their respective playlists are stored here
-    // setTimeout(function(){
       var authOptions = {
         url: 'https://api.spotify.com/v1/users/'+userId+'/playlists',
         headers: { 'Authorization': 'Bearer ' + access_tokenin  },
         json: true
       };
     request.get(authOptions,function(error, response, body) {
+      if(body.error){
+        if (body.error.message === "The access token expired"){
+          res.redirect('/api/spotify/refresh_token?refreshToken=' +refresh_token+"&userId="+userId)
+        }
+      }else{
       if (!error && response.statusCode === 200) {
         const userPlaylists=body.items
         userPlaylists.map(function(playlist){
@@ -171,11 +154,10 @@ router.get("/userPlaylists",async function(req,res){
               })
             }
           });
-          // console.log("all tracks",allTracks)
         })
-      }
+      }}
     })
-  // },1000)
+
     setTimeout(function(){
       const allUserPlaylists = new allPlaylists({
         userId:userId,
@@ -191,11 +173,9 @@ router.get("/userPlaylists",async function(req,res){
 
 
 router.get('/refresh_token', async function(req, res) {
-  const {userId} = req.body
-  const user = await User.findOne({userSpotifyId:userId})
-  
     // requesting access token from refresh token
-    var refresh_token = user.spotifyRefreshToken;
+    var refresh_token = req.query.refreshToken;
+    const userId = req.query.userId
     var authOptions = {
       url: 'https://accounts.spotify.com/api/token',
       headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
@@ -205,16 +185,20 @@ router.get('/refresh_token', async function(req, res) {
       },
       json: true
     };
-  
-    request.post(authOptions, function(error, response, body) {
+    
+    request.post(authOptions,async function(error, response, body) {
       if (!error && response.statusCode === 200) {
+        const user =await User.findOne({userSpotifyId:userId})
         var access_token = body.access_token;
+        user.spotifyAccessToken = access_token
+        //save user with new access token
+        user.save()
         res.send({
+          "message":"access token replaced try again",
           'access_token': access_token
         });
       }
     });
   });
-
 
 module.exports =router
