@@ -1,19 +1,45 @@
 const express = require("express");
 var router = express.Router();
 const Mixtape = require("../models/mixtapeModel");
+const User = require("../models/userModel");
 
 router.post("/createMixtape",async function(req,res){
   console.log(req.body)
-  const {title,description,tracks} = req.body
+  const {title,description,tracks,spotifyUserId} = req.body
   const newMixtape = new Mixtape({
-   title:title,
+   title:title.replace(/\s/g, ''),
    description:description,
-   tracks:tracks
+   tracks:tracks,
+   spotifyUserId:spotifyUserId
   })
   newMixtape.save()
-  res.json({
+  res.status(200).json({
     "message":"new mixtape created"
   })
 })
 
-module.exports = router;
+router.post("/addtofavorite",async function(req,res){
+  const {mixtapeId,userId} = req.body
+  const mixtape = await Mixtape.findOne({_id:mixtapeId})
+  const user = await User.findOne({userSpotifyId:userId})
+  user.favorites.push(mixtape)
+  user.save()
+  res.status(200).json({
+    "message":"mixtape added to favorites"
+  })
+})
+
+router.get("/search",async function(req,res){
+  const {mixtapeTitle} = req.body
+  const mixtape = await Mixtape.findOne({title:mixtapeTitle.toLowerCase().replace(/\s/g, '')})
+  if(!mixtape){
+    res.status(404).json({
+      "message":"mixtape not found"
+    })
+  }
+  res.status(200).json({
+    data:mixtape
+  })
+})
+
+module.exports = router; 

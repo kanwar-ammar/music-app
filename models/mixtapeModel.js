@@ -5,6 +5,11 @@ const Schema = mongoose.Schema
 const mixtapes = new Schema({
     title: {
         type: String,
+        required: true,
+        lowercase: true      
+    },
+    spotifyUserId:{
+        type: String,
         required: true      
     },
     description:{
