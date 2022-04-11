@@ -84,12 +84,11 @@ var generateRandomString = function(length) {
           const userId = body.display_name.toLowerCase()
           const userSpotifyId = body.id
           const spotifyUser = await User.findOne({userSpotifyId})
-          console.log(spotifyUser)
           if (spotifyUser){
             console.log("user is already registered, access token replaced")
             spotifyUser.spotifyAccessToken = access_token
             spotifyUser.save()
-            res.redirect('/')
+            res.redirect('http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard')
           }else{
           //  save user data here
            const user = new User({
@@ -104,7 +103,7 @@ var generateRandomString = function(length) {
            user.save()
            req.user = user
            ///////
-           res.redirect('/');
+           res.redirect('http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard');
           }
           });
 
@@ -127,26 +126,7 @@ router.get("/userPlaylists",async function(req,res){
     var access_tokenin = user.spotifyAccessToken
     const refresh_token = user.spotifyRefreshToken
   
-  //  if uncommenting this also uncomment the timeout function below
-      //  var authOptions = {
-      //   url: 'https://accounts.spotify.com/api/token',
-      //   headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-      //   form: {
-      //     grant_type: 'refresh_token',
-      //     refresh_token: refresh_token
-      //   },
-      //   json: true
-      // };
-  
-      // request.post(authOptions, function(error, response, body) {
-      //   if (!error && response.statusCode === 200) {
-      //     var access_token = body.access_token;
-      //     access_tokenin = access_token
-      //   }
-      // })
-  
     let allTracks =[] //all tracks of user with their respective playlists are stored here
-    // setTimeout(function(){
       var authOptions = {
         url: 'https://api.spotify.com/v1/users/'+userId+'/playlists',
         headers: { 'Authorization': 'Bearer ' + access_tokenin  },
@@ -175,7 +155,6 @@ router.get("/userPlaylists",async function(req,res){
         })
       }
     })
-  // },1000)
     setTimeout(function(){
       const allUserPlaylists = new allPlaylists({
         userId:userId,
@@ -183,7 +162,7 @@ router.get("/userPlaylists",async function(req,res){
       })
       allUserPlaylists.save()
       console.log("all playlists with tracks saved",allUserPlaylists)
-      res.send({
+      res.status(200).json({
         "message":"done"
       })
     },3000)

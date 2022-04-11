@@ -33,6 +33,9 @@ const user = new Schema({
     following:{
         type:Array,
     },
+    favorites:{
+        type:Array,
+    },
     totalMixtapes:{
         type:Number   
     },

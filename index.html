@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-music-developer-token" content="DEVELOPER-TOKEN">
+    <meta name="apple-music-app-name" content="MusicKit Web App">
+    <meta name="apple-music-app-build" content="1.0.0">
+    <title>Document</title>
+</head>
+<script src="https://js-cdn.music.apple.com/musickit/v1/musickit.js"> </script>
+<script>
+    const fs = require("fs");
+    const private_key = fs.readFileSync("key.p8").toString()
+     document.addEventListener('musickitloaded', function() {
+         console.log("hello")
+        // MusicKit global is now defined
+        MusicKit.configure({
+          developerToken: private_key,
+          app: {
+            name: 'My Cool Web App',
+            build: '1978.4.1'
+          }
+        });
+      });
+
+      let music = MusicKit.getInstance();
+        console.log(music)
+
+        // This is called with or without authorization: 
+        music.player.play();
+
+        // This ensures user authorization before calling play():
+        music.authorize().then(function() {
+        music.player.play();
+        });
+
+        // You can wrap any method to ensure authorization before calling:
+        music.authorize().then(function() {
+        music.api.library.albums.then(function(cloudAlbums) {
+            // user's cloudAlbums
+        });
+        });
+</script>
+<body>
+
+    <button id="apple-music-authorize">Authorise</button>
+    <button id="apple-music-unauthorize">Unauthorise</button>
+    
+</body>
+</html>
