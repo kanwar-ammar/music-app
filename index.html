@@ -13,35 +13,37 @@
 <script>
     const fs = require("fs");
     const private_key = fs.readFileSync("key.p8").toString()
-     document.addEventListener('musickitloaded', function() {
-         console.log("hello")
-        // MusicKit global is now defined
-        MusicKit.configure({
-          developerToken: private_key,
-          app: {
-            name: 'My Cool Web App',
-            build: '1978.4.1'
-          }
-        });
+    document.addEventListener('musickitloaded', () => {
+
+      fetch('/token').then(response => response.json()).then(res => {
+  // MusicKit global is now defined
+    /***
+      Configure our MusicKit instance with the signed token from server, returns a configured MusicKit Instance
+      https://developer.apple.com/documentation/musickitjs/musickit/musickitinstance
+    ***/
+    const music = MusicKit.configure({
+      developerToken: private_key,
+      app: {
+        name: 'AppleMusicKitExample',
+        build: '1978.4.1'
+      }
+    });
+
+    document.getElementById('apple-music-authorize').addEventListener('click', () => {
+      console.log("inside button")
+      /***
+        Returns a promise which resolves with a music-user-token when a user successfully authenticates and authorizes
+        https://developer.apple.com/documentation/musickitjs/musickit/musickitinstance/2992701-authorize
+      ***/
+      music.authorize().then(musicUserToken => {
+        console.log(`Authorized, music-user-token: ${musicUserToken}`);
       });
+    });
 
-      let music = MusicKit.getInstance();
-        console.log(music)
-
-        // This is called with or without authorization: 
-        music.player.play();
-
-        // This ensures user authorization before calling play():
-        music.authorize().then(function() {
-        music.player.play();
-        });
-
-        // You can wrap any method to ensure authorization before calling:
-        music.authorize().then(function() {
-        music.api.library.albums.then(function(cloudAlbums) {
-            // user's cloudAlbums
-        });
-        });
+    // expose our instance globally for testing
+    window.music = music;
+  });
+});
 </script>
 <body>
 

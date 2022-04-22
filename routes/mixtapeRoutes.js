@@ -3,43 +3,55 @@ var router = express.Router();
 const Mixtape = require("../models/mixtapeModel");
 const User = require("../models/userModel");
 
-router.post("/createMixtape",async function(req,res){
-  console.log(req.body)
-  const {title,description,tracks,spotifyUserId} = req.body
+router.post("/createMixtape/:spotifyUserId", async function (req, res) {
+  console.log(req.body);
+  const { spotifyUserId } = req.params;
+  const { title, description, tracks, imgsrc } = req.body;
   const newMixtape = new Mixtape({
-   title:title.replace(/\s/g, ''),
-   description:description,
-   tracks:tracks,
-   spotifyUserId:spotifyUserId
-  })
-  newMixtape.save()
+    title: title.replace(/\s/g, ""),
+    imgsrc: imgsrc ? imgsrc : tracks[0].image,
+    description: description,
+    tracks: tracks,
+    spotifyUserId: spotifyUserId,
+  });
+  newMixtape.save();
   res.status(200).json({
-    "message":"new mixtape created"
-  })
-})
+    message: "new mixtape created",
+  });
+});
 
-router.post("/addtofavorite",async function(req,res){
-  const {mixtapeId,userId} = req.body
-  const mixtape = await Mixtape.findOne({_id:mixtapeId})
-  const user = await User.findOne({userSpotifyId:userId})
-  user.favorites.push(mixtape)
-  user.save()
+router.get("/allUserMixtapes/:userId", async function (req, res) {
+  const { userId } = req.params;
+  const mixtapes = await Mixtape.find({ spotifyUserId: userId });
   res.status(200).json({
-    "message":"mixtape added to favorites"
-  })
-})
+    data: mixtapes,
+  });
+});
 
-router.get("/search",async function(req,res){
-  const {mixtapeTitle} = req.body
-  const mixtape = await Mixtape.findOne({title:mixtapeTitle.toLowerCase().replace(/\s/g, '')})
-  if(!mixtape){
+router.post("/addtofavorite", async function (req, res) {
+  const { mixtapeId, userId } = req.body;
+  const mixtape = await Mixtape.findOne({ _id: mixtapeId });
+  const user = await User.findOne({ userSpotifyId: userId });
+  user.favorites.push(mixtape);
+  user.save();
+  res.status(200).json({
+    message: "mixtape added to favorites",
+  });
+});
+
+router.get("/search", async function (req, res) {
+  const { mixtapeTitle } = req.body;
+  const mixtape = await Mixtape.findOne({
+    title: mixtapeTitle.toLowerCase().replace(/\s/g, ""),
+  });
+  if (!mixtape) {
     res.status(404).json({
-      "message":"mixtape not found"
-    })
+      message: "mixtape not found",
+    });
   }
   res.status(200).json({
-    data:mixtape
-  })
-})
+    data: mixtape,
+  });
+});
 
-module.exports = router; 
+module.exports = router;

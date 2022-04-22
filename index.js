@@ -16,23 +16,21 @@ const mixtapeRoutes = require("./routes/mixtapeRoutes");
 const userRoutes = require("./routes/userRoutes");
 const spotifyRoutes = require("./routes/spotifyRoutes");
 const appleRoutes = require("./routes/appleRoutes");
- const connect = mongoose.connect(
-  process.env.DB_CONNECTION_STRING,
-      {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-      }
-  );
-  connect.then(
-      (db) => {
-          console.log("Connected correctly to server");
-      },
-      (err) => {
-          console.log(err);
-      }
-  );
- 
+var request = require('request');
+const jwt = require("jsonwebtoken");
+
 var app = express();
+
+// var allowlist = ['http://localhost:8888/api/spotify/login', 'http://example2.com']
+// var corsOptionsDelegate = function (req, callback) {
+//   var corsOptions;
+//   if (allowlist.indexOf(req.header('Origin')) !== -1) {
+//     corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+//   } else {
+//     corsOptions = { origin: false } // disable CORS for this request
+//   }
+//   callback(null, corsOptions) // callback expects two parameters: error and options
+// }
  
 app.use(express.static(__dirname + '/public'))
   .use(cors())
@@ -40,12 +38,28 @@ app.use(express.static(__dirname + '/public'))
   .use(express.urlencoded({ extended: false }))
   .use(cookieParser())
 
-
+const connect = mongoose.connect(
+process.env.DB_CONNECTION_STRING,
+    {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    }
+);
+connect.then(
+    (db) => {
+        console.log("Connected correctly to server");
+    },
+    (err) => {
+        console.log(err);
+    }
+);
+ 
  app.use("/api/spotify",spotifyRoutes)
  app.use("/api/mixtape", mixtapeRoutes);
  app.use("/api/user",userRoutes)
  app.use("/api/apple",appleRoutes)
- 
+
+const fs = require("fs");
  
  console.log('Listening on 8888');
  app.listen(8888);
