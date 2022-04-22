@@ -1,25 +1,28 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-const Schema = mongoose.Schema
+const Schema = mongoose.Schema;
 
 const mixtapes = new Schema({
-    title: {
-        type: String,
-        required: true,
-        lowercase: true      
-    },
-    spotifyUserId:{
-        type: String,
-        required: true      
-    },
-    description:{
-        type: String,
-        required: true  
-    },
-    tracks:{
-        type:Array,
-        required:true
-    }
-})
+  title: {
+    type: String,
+    required: true,
+    lowercase: true,
+  },
+  imgsrc: {
+    type: String,
+  },
+  spotifyUserId: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  tracks: {
+    type: Array,
+    required: true,
+  },
+});
 
-module.exports = mongoose.model('mixtapes', mixtapes);
+module.exports = mongoose.model("mixtapes", mixtapes);
