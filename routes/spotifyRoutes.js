@@ -22,37 +22,37 @@ var generateRandomString = function (length) {
   }
   return text;
 };
-router.get("/login", function (req, res, next) {
-  //return code=can be exchanged for access token and state= protection
-  console.log("logged in");
-  var state = generateRandomString(16);
-  res.cookie(stateKey, state);
+// router.get("/login", function (req, res, next) {
+//   //return code=can be exchanged for access token and state= protection
+//   console.log("logged in");
+//   var state = generateRandomString(16);
+//   res.cookie(stateKey, state);
 
-  // your application requests authorization
-  // what we will be needing from a user
-  var scope =
-    "user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
-  console.log(
-    "https://accounts.spotify.com/authorize?" +
-      querystring.stringify({
-        response_type: "code",
-        client_id: client_id,
-        scope: scope,
-        redirect_uri: redirect_uri,
-        state: state,
-      })
-  );
-  res.redirect(
-    "https://accounts.spotify.com/authorize?" +
-      querystring.stringify({
-        response_type: "code",
-        client_id: client_id,
-        scope: scope,
-        redirect_uri: redirect_uri,
-        state: state,
-      })
-  );
-});
+//   // your application requests authorization
+//   // what we will be needing from a user
+//   var scope =
+//     "user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
+//   console.log(
+//     "https://accounts.spotify.com/authorize?" +
+//       querystring.stringify({
+//         response_type: "code",
+//         client_id: client_id,
+//         scope: scope,
+//         redirect_uri: redirect_uri,
+//         state: state,
+//       })
+//   );
+//   res.redirect(
+//     "https://accounts.spotify.com/authorize?" +
+//       querystring.stringify({
+//         response_type: "code",
+//         client_id: client_id,
+//         scope: scope,
+//         redirect_uri: redirect_uri,
+//         state: state,
+//       })
+//   );
+// });
 
 let access_token;
 
@@ -61,8 +61,8 @@ router.get("/callback", function (req, res) {
   // after checking the state parameter
   console.log("req.query", req.query);
   var code = req.query.code || null;
-  var state = req.query.state || null;
-  var storedState = req.cookies ? req.cookies[stateKey] : null;
+  // var state = req.query.state || null;
+  // var storedState = req.cookies ? req.cookies[stateKey] : null;
 
   // if (state === null || state !== storedState) {
   //   res.redirect(

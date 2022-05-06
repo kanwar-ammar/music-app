@@ -9,7 +9,7 @@ router.post("/createMixtape/:spotifyUserId", async function (req, res) {
   const { title, description, tracks, imgsrc } = req.body;
   const newMixtape = new Mixtape({
     title: title.replace(/\s/g, ""),
-    imgsrc: imgsrc ? imgsrc : tracks[0].image,
+    imgsrc: imgsrc ? imgsrc : tracks[0].image ,
     description: description,
     tracks: tracks,
     spotifyUserId: spotifyUserId,
