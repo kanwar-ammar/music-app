@@ -9,7 +9,7 @@ router.post("/createMixtape/:spotifyUserId", async function (req, res) {
   const { title, description, tracks, imgsrc } = req.body;
   const newMixtape = new Mixtape({
     title: title.replace(/\s/g, ""),
-    imgsrc: imgsrc ? imgsrc : tracks[0].image,
+    imgsrc: imgsrc ? imgsrc : tracks[0].image ,
     description: description,
     tracks: tracks,
     spotifyUserId: spotifyUserId,
@@ -25,6 +25,17 @@ router.get("/allUserMixtapes/:userId", async function (req, res) {
   const mixtapes = await Mixtape.find({ spotifyUserId: userId });
   res.status(200).json({
     data: mixtapes,
+  });
+});
+
+router.get("/MixtapesAllTracks/:userId", async function (req, res) {
+  const { userId } = req.params;
+  let tracksUri=[]
+  const mixtapes = await Mixtape.find({ spotifyUserId: userId });
+  await mixtapes[0].tracks.map(track => tracksUri.push(track.spotifyUri))
+  console.log("tracksUri",tracksUri)
+  res.status(200).json({
+    data: tracksUri,
   });
 });
 
