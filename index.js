@@ -39,7 +39,8 @@ app.use(express.static(__dirname + '/public'))
   .use(cookieParser())
 
 const connect = mongoose.connect(
-process.env.DB_CONNECTION_STRING,
+// process.env.DB_CONNECTION_STRING,
+"mongodb+srv://codebusters:omSpIMdrjhxqhMZ5@cluster0.sp3ku.mongodb.net/musicapp?retryWrites=true&w=majority",
     {
         useNewUrlParser: true,
         useUnifiedTopology: true,

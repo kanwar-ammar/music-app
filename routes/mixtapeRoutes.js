@@ -28,6 +28,17 @@ router.get("/allUserMixtapes/:userId", async function (req, res) {
   });
 });
 
+router.get("/MixtapesAllTracks/:userId", async function (req, res) {
+  const { userId } = req.params;
+  let tracksUri=[]
+  const mixtapes = await Mixtape.find({ spotifyUserId: userId });
+  await mixtapes[0].tracks.map(track => tracksUri.push(track.spotifyUri))
+  console.log("tracksUri",tracksUri)
+  res.status(200).json({
+    data: tracksUri,
+  });
+});
+
 router.post("/addtofavorite", async function (req, res) {
   const { mixtapeId, userId } = req.body;
   const mixtape = await Mixtape.findOne({ _id: mixtapeId });

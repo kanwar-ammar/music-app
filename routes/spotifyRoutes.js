@@ -7,10 +7,9 @@ const User = require("../models/userModel");
 const allPlaylists = require("../models/allPlaylistsModel");
 
 var stateKey = "spotify_auth_state";
-
-var client_id = process.env.CLIENT_ID; // Your client id
-var client_secret = process.env.CLIENT_SECRET; // Your secret
-var redirect_uri = "http://localhost:8888/api/spotify/callback"; // Your redirect uri
+var client_id = process.env.CLIENT_ID;
+var client_secret = process.env.CLIENT_SECRET;
+var redirect_uri = "http://18.132.114.99:8888/api/spotify/callback"; // Your redirect uri
 
 var generateRandomString = function (length) {
   var text = "";
@@ -22,37 +21,38 @@ var generateRandomString = function (length) {
   }
   return text;
 };
-// router.get("/login", function (req, res, next) {
-//   //return code=can be exchanged for access token and state= protection
-//   console.log("logged in");
-//   var state = generateRandomString(16);
-//   res.cookie(stateKey, state);
 
-//   // your application requests authorization
-//   // what we will be needing from a user
-//   var scope =
-//     "user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
-//   console.log(
-//     "https://accounts.spotify.com/authorize?" +
-//       querystring.stringify({
-//         response_type: "code",
-//         client_id: client_id,
-//         scope: scope,
-//         redirect_uri: redirect_uri,
-//         state: state,
-//       })
-//   );
-//   res.redirect(
-//     "https://accounts.spotify.com/authorize?" +
-//       querystring.stringify({
-//         response_type: "code",
-//         client_id: client_id,
-//         scope: scope,
-//         redirect_uri: redirect_uri,
-//         state: state,
-//       })
-//   );
-// });
+router.get("/login", function (req, res, next) {
+  //return code=can be exchanged for access token and state= protection
+  console.log("logged in");
+  var state = generateRandomString(16);
+  res.cookie(stateKey, state);
+
+  // your application requests authorization
+  // what we will be needing from a user
+  var scope =
+    "user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
+  console.log(
+    "https://accounts.spotify.com/authorize?" +
+      querystring.stringify({
+        response_type: "code",
+        client_id: client_id,
+        scope: scope,
+        redirect_uri: redirect_uri,
+        state: state,
+      })
+  );
+  res.redirect(
+    "https://accounts.spotify.com/authorize?" +
+      querystring.stringify({
+        response_type: "code",
+        client_id: client_id,
+        scope: scope,
+        redirect_uri: redirect_uri,
+        state: state,
+      })
+  );
+});
 
 let access_token;
 
@@ -102,18 +102,16 @@ router.get("/callback", function (req, res) {
         console.log("body in call back", body);
         const userId = body.display_name.toLowerCase();
         const userSpotifyId = body.id;
-        console.log(userSpotifyId);
+        console.log("user spotify ID... ", userSpotifyId);
         const spotifyUser = await User.findOne({ userSpotifyId });
         if (spotifyUser) {
+          //update spotify token in database
           spotifyUser.spotifyAccessToken = access_token;
           spotifyUser.save();
-          console.log(spotifyUser);
+          console.log("user already in database...  ", spotifyUser);
           res.redirect(
-            `http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`
+            `http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard#userSpotifyId=${userSpotifyId}`
           );
-          // res.send({
-          //   data: spotifyUser,
-          // });
         } else {
           //  save user data here
           const user = new User({
@@ -126,10 +124,8 @@ router.get("/callback", function (req, res) {
           });
           console.log("saved user in database", user);
           user.save();
-          // req.user = user;
-          ///////
           res.redirect(
-            `http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`
+            `http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard#userSpotifyId=${userSpotifyId}`
           );
         }
       });
@@ -146,7 +142,7 @@ router.get("/callback", function (req, res) {
 });
 
 router.post("/userinfo/:access_token", function (req, res) {
-  var redirect_uri = "http://localhost:8888/api/spotify/callback"; // Your redirect uri
+  var redirect_uri = "http://18.132.114.99:8888/api/spotify/callback"; // Your redirect uri
   var authOptions = {
     url: "https://accounts.spotify.com/api/token",
     form: {
@@ -229,6 +225,7 @@ router.post("/userinfo/:access_token", function (req, res) {
   });
 });
 
+//used in user.js
 router.get("/loggedInUser/:userId", async function (req, res) {
   const { userId } = req.params;
   console.log(userId);
@@ -238,6 +235,7 @@ router.get("/loggedInUser/:userId", async function (req, res) {
   });
 });
 
+//used in playlist.js
 router.get("/userPlaylists/:userId", async function (req, res) {
   const { userId } = req.params;
   console.log(userId);
@@ -265,7 +263,9 @@ router.get("/userPlaylists/:userId", async function (req, res) {
         userPlaylists.map(function (playlist) {
           const playlistName = playlist.name;
           const playlistId = playlist.id;
-          const playlistImage = playlist.images[0].url;
+          const playlistImage = playlist.images[0]
+            ? playlist.images[0].url
+            : "https://pbs.twimg.com/profile_images/558556141605511168/2JDJX8SQ_400x400.png";
           const noOfTracks = playlist.tracks.total;
           const playlistOwner = playlist.owner.display_name;
           const getTracks = {
@@ -283,7 +283,9 @@ router.get("/userPlaylists/:userId", async function (req, res) {
                   title: track.track.name,
                   duration: track.track.duration_ms,
                   image: track.track.album.images[0].url,
+                  albumName: track.track.album.name,
                   artists: track.track.artists.map((a) => a.name),
+                  spotifyUri: track.track.uri,
                 });
               });
               allTracks.push({
