@@ -10,7 +10,7 @@ var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
 var redirect_uri =
-  "http://https://kanwar-ammar.github.io/music-app/api/spotify/callback"; // Your redirect uri
+  "https://kanwar-ammar.github.io/music-app/api/spotify/callback"; // Your redirect uri
 const host = "localhost:3000";
 
 var generateRandomString = function (length) {
