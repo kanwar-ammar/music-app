@@ -4,7 +4,8 @@
   "description": "Music playlist application",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ssh": "ssh -i 'Indi.pem' ubuntu@ec2-18-132-114-99.eu-west-2.compute.amazonaws.com"
   },
   "repository": {
     "type": "git",

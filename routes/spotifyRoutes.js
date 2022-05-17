@@ -10,6 +10,7 @@ var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
 var redirect_uri = "http://18.132.114.99:8888/api/spotify/callback"; // Your redirect uri
+const host = "localhost:3000";
 
 var generateRandomString = function (length) {
   var text = "";
@@ -89,6 +90,8 @@ router.get("/callback", function (req, res) {
   };
 
   request.post(authOptions, function (error, response, body) {
+    console.log("error in callback", body);
+    console.log(error);
     if (!error && response.statusCode === 200) {
       (access_token = body.access_token), (refresh_token = body.refresh_token);
 
@@ -111,6 +114,7 @@ router.get("/callback", function (req, res) {
           console.log("user already in database...  ", spotifyUser);
           res.redirect(
             `http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard#userSpotifyId=${userSpotifyId}`
+            // "http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`"
           );
         } else {
           //  save user data here
@@ -125,7 +129,7 @@ router.get("/callback", function (req, res) {
           console.log("saved user in database", user);
           user.save();
           res.redirect(
-            `http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard#userSpotifyId=${userSpotifyId}`
+            `http://${host}/dashboard#userSpotifyId=${userSpotifyId}`
           );
         }
       });
@@ -217,9 +221,7 @@ router.post("/userinfo/:access_token", function (req, res) {
         user.save();
         req.user = user;
         ///////
-        res.redirect(
-          "/http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard"
-        );
+        res.redirect(`/http:${host}/dashboard`);
       }
     }
   });
