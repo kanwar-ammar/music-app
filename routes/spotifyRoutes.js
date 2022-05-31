@@ -9,9 +9,8 @@ const allPlaylists = require("../models/allPlaylistsModel");
 var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
-var redirect_uri =
-  "https://kanwar-ammar.github.io/music-app/api/spotify/callback"; // Your redirect uri
-const host = "localhost:3000";
+var redirect_uri = "http://localhost:8888/api/spotify/callback"; // Your redirect uri
+//18.132.114.99
 
 var generateRandomString = function (length) {
   var text = "";
@@ -91,8 +90,11 @@ router.get("/callback", function (req, res) {
   };
 
   request.post(authOptions, function (error, response, body) {
+    console.log("CLIENT _ID", client_id);
+    console.log("CLIENT_SECRET,", client_secret);
+    console.log("REDIRECT_URI", redirect_uri);
     console.log("error in callback", body);
-    console.log(error);
+    console.log("response status code in callback", response.statusCode);
     if (!error && response.statusCode === 200) {
       (access_token = body.access_token), (refresh_token = body.refresh_token);
 
@@ -114,8 +116,8 @@ router.get("/callback", function (req, res) {
           spotifyUser.save();
           console.log("user already in database...  ", spotifyUser);
           res.redirect(
-            `http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard#userSpotifyId=${userSpotifyId}`
-            // "http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`"
+            `http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`
+            // http://music-webapp.s3-website.eu-west-2.amazonaws.com
           );
         } else {
           //  save user data here
@@ -130,7 +132,8 @@ router.get("/callback", function (req, res) {
           console.log("saved user in database", user);
           user.save();
           res.redirect(
-            `http://${host}/dashboard#userSpotifyId=${userSpotifyId}`
+            `http://localhost:3000/dashboard#userSpotifyId=${userSpotifyId}`
+            // http://music-webapp.s3-website.eu-west-2.amazonaws.com
           );
         }
       });
@@ -222,7 +225,9 @@ router.post("/userinfo/:access_token", function (req, res) {
         user.save();
         req.user = user;
         ///////
-        res.redirect(`/http:${host}/dashboard`);
+        res.redirect(
+          "/http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard"
+        );
       }
     }
   });

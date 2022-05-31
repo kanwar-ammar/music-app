@@ -9,7 +9,7 @@ router.post("/createMixtape/:spotifyUserId", async function (req, res) {
   const { title, description, tracks, imgsrc } = req.body;
   const newMixtape = new Mixtape({
     title: title.replace(/\s/g, ""),
-    imgsrc: imgsrc ? imgsrc : tracks[0].image ,
+    imgsrc: imgsrc ? imgsrc : tracks[0].image,
     description: description,
     tracks: tracks,
     spotifyUserId: spotifyUserId,
@@ -28,23 +28,46 @@ router.get("/allUserMixtapes/:userId", async function (req, res) {
   });
 });
 
+router.get("/allSavedMixtapes/:userId", async function (req, res) {
+  const { userId } = req.params;
+  const user = await User.findOne({ userSpotifyId: userId });
+  res.status(200).json({
+    data: user.favorites,
+  });
+});
+
+router.get("/allMixtapes", async function (req, res) {
+  let allMixtapes = await Mixtape.find();
+  let all = [];
+  allMixtapes.map(async (mixtape) => {
+    const user = await User.findOne({ userSpotifyId: mixtape.spotifyUserId });
+    mixtape["profilename"] = user.name;
+    // console.log(mixtape);
+  });
+  res.status(200).json({
+    data: allMixtapes,
+  });
+});
+
 router.get("/MixtapesAllTracks/:userId", async function (req, res) {
   const { userId } = req.params;
-  let tracksUri=[]
+  let tracksUri = [];
   const mixtapes = await Mixtape.find({ spotifyUserId: userId });
-  await mixtapes[0].tracks.map(track => tracksUri.push(track.spotifyUri))
-  console.log("tracksUri",tracksUri)
+  await mixtapes[0].tracks.map((track) => tracksUri.push(track.spotifyUri));
+  console.log("tracksUri", tracksUri);
   res.status(200).json({
     data: tracksUri,
   });
 });
 
 router.post("/addtofavorite", async function (req, res) {
-  const { mixtapeId, userId } = req.body;
-  const mixtape = await Mixtape.findOne({ _id: mixtapeId });
-  const user = await User.findOne({ userSpotifyId: userId });
-  user.favorites.push(mixtape);
-  user.save();
+  const { mixtape, user } = req.body;
+  console.log("mixtape to be saved", mixtape);
+  console.log("Logged In user from Front end", user.userSpotifyId);
+  const indiUser = await User.findOne({ userSpotifyId: user.userSpotifyId });
+  console.log("IndiUser", indiUser);
+  indiUser.favorites.push(mixtape);
+  indiUser.save();
   res.status(200).json({
     message: "mixtape added to favorites",
   });
