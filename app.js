@@ -31,9 +31,9 @@ app.get("/send", (req, res) => {
   res.send("Hello, I am Music Backend");
 });
 
-var client_id = "a8bad90b454c4ab59b68b38fe1836c2a"; // Your client id
-var client_secret = "7c110aca67fe4d15a063be6103f9f3d9"; // Your secret
-var redirect_uri = "http://18.132.114.99:8888/callback"; // Your redirect uri
+// var client_id = "a8bad90b454c4ab59b68b38fe1836c2a"; // Your client id
+// var client_secret = "7c110aca67fe4d15a063be6103f9f3d9"; // Your secret
+// var redirect_uri = "http://18.132.114.99:8888/callback"; // Your redirect uri
 
 /**
  * Generates a random string containing numbers and letters
@@ -167,25 +167,6 @@ const scopes = [
   "user-follow-read",
   "user-follow-modify",
 ];
-
-//   var spotifyApi = new SpotifyApp({
-//     client_id : 'a8bad90b454c4ab59b68b38fe1836c2a', // Your client id
-//     client_secret : '7c110aca67fe4d15a063be6103f9f3d9',// Your secret
-//     redirect_uri : 'http://localhost:8888/callback', // Your redirect uri
-// });
-
-// app.get("/login", (req, res) => {
-//     try {
-//       let url = spotifyApi.spotify.createAuthorizeURL(scopes, null, true);
-//       console.log(url)
-//       res.redirect(url);
-//     } catch (error) {
-//       return res.json({
-//         success: false,
-//         error: error.message,
-//       });
-//     }
-//   });
 
 app.use("/api/user", userRoutes);
 
