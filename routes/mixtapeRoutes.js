@@ -31,10 +31,35 @@ router.get("/allUserMixtapes/:userId", async function (req, res) {
 router.get("/allSavedMixtapes/:userId", async function (req, res) {
   const { userId } = req.params;
   const user = await User.findOne({ userSpotifyId: userId });
+  console.log("saved mixtapes of a user", user.favorites);
   res.status(200).json({
     data: user.favorites,
   });
 });
+
+router.get("/mixtapeSavedCount/:mixtapeId",async function(req,res){
+  try{
+    let saved=0
+    const { mixtapeId } = req.params;
+    // console.log(mixtapeId);
+    const allUsers =  await User.find()
+    for (let user of allUsers){
+      for (let mixtape of user.favorites){
+        if(mixtape._id == mixtapeId){
+            saved=saved+1
+            console.log(mixtape._id,mixtapeId)
+          }
+      }
+    }
+    res.status(200).json({
+      data:saved
+    })
+  }catch(err){
+  res.status(400).json({
+    message:err.message
+  })
+}
+})
 
 router.get("/allMixtapes", async function (req, res) {
   let allMixtapes = await Mixtape.find();
@@ -42,7 +67,6 @@ router.get("/allMixtapes", async function (req, res) {
   allMixtapes.map(async (mixtape) => {
     const user = await User.findOne({ userSpotifyId: mixtape.spotifyUserId });
     mixtape["profilename"] = user.name;
-    // console.log(mixtape);
   });
   res.status(200).json({
     data: allMixtapes,

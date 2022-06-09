@@ -5,7 +5,9 @@ var request = require("request");
 var querystring = require("querystring");
 const User = require("../models/userModel");
 const allPlaylists = require("../models/allPlaylistsModel");
-
+const storePlaylists = require("../helpers/storePlaylists")
+const validateToken = require("../middlewares/validateToken")
+// import validateToken from "../middlewares/validateToken";
 var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
@@ -62,17 +64,7 @@ router.get("/callback", function (req, res) {
   // after checking the state parameter
   console.log("req.query", req.query);
   var code = req.query.code || null;
-  // var state = req.query.state || null;
-  // var storedState = req.cookies ? req.cookies[stateKey] : null;
 
-  // if (state === null || state !== storedState) {
-  //   res.redirect(
-  //     "/#" +
-  //       querystring.stringify({
-  //         error: "state_mismatch",
-  //       })
-  //   );
-  // } else {
   res.clearCookie(stateKey);
   var authOptions = {
     url: "https://accounts.spotify.com/api/token",
@@ -94,7 +86,7 @@ router.get("/callback", function (req, res) {
     console.log("CLIENT_SECRET,", client_secret);
     console.log("REDIRECT_URI", redirect_uri);
     console.log("error in callback", body);
-    console.log("response status code in callback", response.statusCode);
+    // console.log("response status code in callback", response.statusCode);
     if (!error && response.statusCode === 200) {
       (access_token = body.access_token), (refresh_token = body.refresh_token);
 
@@ -125,6 +117,7 @@ router.get("/callback", function (req, res) {
             userSpotifyId: userSpotifyId,
             name: body.display_name,
             email: body.email,
+            image:body.images[0]?body.images[0].url:"https://www.pngitem.com/pimgs/m/524-5246388_anonymous-user-hd-png-download.png",
             userId: "@" + userId.replace(/\s/g, ""),
             spotifyAccessToken: access_token,
             spotifyRefreshToken: refresh_token,
@@ -149,94 +142,11 @@ router.get("/callback", function (req, res) {
   // }
 });
 
-router.post("/userinfo/:access_token", function (req, res) {
-  var redirect_uri = "http://18.132.114.99:8888/api/spotify/callback"; // Your redirect uri
-  var authOptions = {
-    url: "https://accounts.spotify.com/api/token",
-    form: {
-      code: code,
-      redirect_uri: redirect_uri,
-      grant_type: "authorization_code",
-    },
-    headers: {
-      Authorization:
-        "Basic " +
-        new Buffer(client_id + ":" + client_secret).toString("base64"),
-    },
-    json: true,
-  };
-
-  var { access_token } = req.params;
-  var options = {
-    url: "https://api.spotify.com/v1/me",
-    headers: { Authorization: "Bearer " + access_token },
-    json: true,
-  };
-  request.post(authOptions, function (error, response, body) {
-    console.log("body in token", body);
-    if (!error && response.statusCode === 200) {
-      (access_token = body.access_token), (refresh_token = body.refresh_token);
-    }
-  });
-
-  request.get(options, async function (error, response, body) {
-    console.log("body in userinfo", body);
-  });
-  console.log("accesstoken in userinfo", access_token);
-  var options = {
-    url: "https://api.spotify.com/v1/me",
-    headers: { Authorization: "Bearer " + access_token },
-    json: true,
-  };
-  // use the access token to access the Spotify Web API
-  request.get(options, async function (error, response, body) {
-    console.log("bosy in userinfo", body);
-    if (body.error) {
-      if (body.error.message === "The access token expired") {
-        const user = await User.findOne({ spotifyAccessToken: access_token });
-        console.log("user in userinfo", user);
-        const userId = user.userSpotifyId;
-        // res.redirect('/api/spotify/refresh_token?refreshToken=' +refresh_token+"&userId="+userId)
-        res.redirect(`/api/spotify/refresh_token/${userId}`);
-      }
-    } else {
-      const userId = body.display_name.toLowerCase();
-      const userSpotifyId = body.id;
-      const spotifyUser = await User.findOne({ userSpotifyId });
-      if (spotifyUser) {
-        spotifyUser.spotifyAccessToken = access_token;
-        spotifyUser.save();
-        console.log(spotifyUser);
-        // res.redirect('http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard')
-        res.send({
-          data: spotifyUser,
-        });
-      } else {
-        //  save user data here
-        const user = new User({
-          userSpotifyId: userSpotifyId,
-          name: body.display_name,
-          email: body.email,
-          userId: "@" + userId.replace(/\s/g, ""),
-          spotifyAccessToken: access_token,
-          spotifyRefreshToken: refresh_token,
-        });
-        console.log("saved user in database", user);
-        user.save();
-        req.user = user;
-        ///////
-        res.redirect(
-          "/http://music-webapp.s3-website.eu-west-2.amazonaws.com/dashboard"
-        );
-      }
-    }
-  });
-});
 
 //used in user.js
 router.get("/loggedInUser/:userId", async function (req, res) {
   const { userId } = req.params;
-  console.log(userId);
+  console.log("Logged in user", userId);
   const user = await User.findOne({ userSpotifyId: userId });
   res.status(200).json({
     data: user,
@@ -258,66 +168,76 @@ router.get("/userPlaylists/:userId", async function (req, res) {
     headers: { Authorization: "Bearer " + access_tokenin },
     json: true,
   };
-  request.get(authOptions, function (error, response, body) {
+  request.get(authOptions,async function (error, response, body) {
     console.log("error in user playlists", body.error);
     if (body.error) {
       if (body.error.message === "The access token expired") {
         console.log("inside userPlaylists");
-        return res.redirect(`/api/spotify/refresh_token/${userId}`);
+        res.redirect(`/api/spotify/refresh_token/${userId}`);
+        // validateToken.validateToken(userId);
       }
     } else {
       if (!error && response.statusCode === 200) {
         const userPlaylists = body.items;
-        userPlaylists.map(function (playlist) {
-          const playlistName = playlist.name;
-          const playlistId = playlist.id;
-          const playlistImage = playlist.images[0]
-            ? playlist.images[0].url
-            : "https://pbs.twimg.com/profile_images/558556141605511168/2JDJX8SQ_400x400.png";
-          const noOfTracks = playlist.tracks.total;
-          const playlistOwner = playlist.owner.display_name;
-          const getTracks = {
-            url:
-              "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks",
-            headers: { Authorization: "Bearer " + access_tokenin },
-            json: true,
-          };
-          request.get(getTracks, function (error, response, body) {
-            if (!error && response.statusCode === 200) {
-              let _allTracks = [];
-              body.items.map((track) => {
-                _allTracks.push({
-                  added_at: track.added_at,
-                  title: track.track.name,
-                  duration: track.track.duration_ms,
-                  image: track.track.album.images[0].url,
-                  albumName: track.track.album.name,
-                  artists: track.track.artists.map((a) => a.name),
-                  spotifyUri: track.track.uri,
-                });
-              });
-              allTracks.push({
-                playlistName: playlistName,
-                playlistId: playlistId,
-                playlistOwner: playlistOwner,
-                playlistImage: playlistImage,
-                noOfTracks: noOfTracks,
-                Tracks: _allTracks,
-              });
-            }
-          });
-        });
-        setTimeout(function () {
-          const allUserPlaylists = new allPlaylists({
-            userId: userId,
-            Playlists: allTracks,
-          });
-          allUserPlaylists.save();
-          console.log("all playlists with tracks saved", allUserPlaylists);
-          res.status(200).json({
-            data: allUserPlaylists,
-          });
-        }, 3000);
+        const result =await storePlaylists.storePlaylists(userPlaylists,access_tokenin)
+        console.log("result in user playlists",result)
+        // userPlaylists.map(function (playlist) {
+        //   const playlistName = playlist.name;
+        //   const playlistId = playlist.id;
+        //   const playlistImage = playlist.images[0]
+        //     ? playlist.images[0].url
+        //     : "https://pbs.twimg.com/profile_images/558556141605511168/2JDJX8SQ_400x400.png";
+        //   const noOfTracks = playlist.tracks.total;
+        //   const playlistOwner = playlist.owner.display_name;
+        //   const getTracks = {
+        //     url:
+        //       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks",
+        //     headers: { Authorization: "Bearer " + access_tokenin },
+        //     json: true,
+        //   };
+        //   request.get(getTracks, function (error, response, body) {
+        //     if (!error && response.statusCode === 200) {
+        //       let _allTracks = [];
+        //       body.items.map((track) => {
+        //         _allTracks.push({
+        //           added_at: track.added_at,
+        //           title: track.track.name,
+        //           duration: track.track.duration_ms,
+        //           image: track.track.album.images[0].url,
+        //           albumName: track.track.album.name,
+        //           artists: track.track.artists.map((a) => a.name),
+        //           spotifyUri: track.track.uri,
+        //         });
+        //       });
+        //       allTracks.push({
+        //         playlistName: playlistName,
+        //         playlistId: playlistId,
+        //         playlistOwner: playlistOwner,
+        //         playlistImage: playlistImage,
+        //         noOfTracks: noOfTracks,
+        //         Tracks: _allTracks,
+        //       });
+        //     }
+        //   });
+        // });
+        // setTimeout(function () {
+        //   const allUserPlaylists = new allPlaylists({
+        //     userId: userId,
+        //     Playlists: allTracks,
+        //   });
+        //   // allUserPlaylists.save();
+        //   // console.log("all playlists with tracks saved", allUserPlaylists);
+        //   res.status(200).json({
+        //     data: allUserPlaylists,
+        //   });
+        // }, 3000);
+        const allUserPlaylists ={
+          userId: userId,
+          Playlists: result,
+      }
+      res.status(200).json({
+        data: allUserPlaylists,
+      });
       }
     }
   });
@@ -326,35 +246,8 @@ router.get("/userPlaylists/:userId", async function (req, res) {
 //api used for refreshing spotify access token of a user because it expires after some time
 router.get("/refresh_token/:userId", async function (req, res) {
   const { userId } = req.params;
-  console.log("inside refresh token", userId);
-  const user = await User.findOne({ userSpotifyId: userId });
-
-  // requesting access token from refresh token
-  var refresh_token = user.spotifyRefreshToken;
-  var authOptions = {
-    url: "https://accounts.spotify.com/api/token",
-    headers: {
-      Authorization:
-        "Basic " +
-        new Buffer(client_id + ":" + client_secret).toString("base64"),
-    },
-    form: {
-      grant_type: "refresh_token",
-      refresh_token: refresh_token,
-    },
-    json: true,
-  };
-
-  request.post(authOptions, async function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      var access_token = body.access_token;
-      user.spotifyAccessToken = access_token;
-      //save user with new access token
-      user.save();
-      console.log("user in refresh token", user);
-      res.redirect("back");
-    }
-  });
+  validateToken.validateToken(userId);
+  res.redirect("back");
 });
 
 module.exports = router;
