@@ -55,4 +55,14 @@ router.post("/follow/:userSpotifyId", async function (req, res) {
   }
 });
 
+//used in user.js
+router.get("/loggedInUser/:userId", async function (req, res) {
+  const { userId } = req.params;
+  console.log("Logged in user", userId);
+  const user = await User.findById(userId).populate("spotifyId deezerId");
+  res.status(200).json({
+    data: user,
+  });
+});
+
 module.exports = router;

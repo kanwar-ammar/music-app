@@ -3,10 +3,12 @@ var router = express.Router();
 require("dotenv").config();
 const axios = require("axios");
 var request = require("request");
-const app_id = 551862;
 const User = require("../models/userModel");
+const deezerUserModel = require("../models/userDeezerModel");
 const storeDeezerPlaylists = require("../helpers/storeDeezerPlaylists");
-const secret_key = "043c79149175f71a76bed0f794e5a71c";
+const userDeezerModel = require("../models/userDeezerModel");
+const secret_key = process.env.DEEZER_SECRET;
+const app_id = process.env.DEEZER_APP_ID;
 
 router.get("/login", function (req, res) {
   console.log(req.query.code);
@@ -28,48 +30,89 @@ router.get("/login", function (req, res) {
     };
 
     request.get(info, async function (error, response, body) {
-      const user = await eval(body.replace("/(/g", ""));
-      console.log(user, user.id);
-      const deezerUser = await User.findOne({ userDeezerId: user.id });
-      if (!deezerUser) {
-        console.log("user not found", user);
-        const newUser = new User({
-          userDeezerId: user.id,
+      const deezerUser = await eval(body.replace("/(/g", ""));
+      const savedDeezerUser = await userDeezerModel.findOne({
+        userDeezerId: deezerUser.id,
+      });
+      if (!savedDeezerUser) {
+        console.log("user not found", savedDeezerUser);
+        const newUser = new userDeezerModel({
+          userDeezerId: deezerUser.id,
           deezerAccessToken: deezerAccessToken,
-          deezerName: user.name,
-          deezerImage: user.picture,
-          deezerEmail: user.email,
+          name: deezerUser.name,
+          image: deezerUser.picture,
+          email: deezerUser.email,
         });
-        await newUser.save().then((res) => {
-          console.log("user saved", res);
+        return await newUser.save().then((user) => {
+          return res.redirect(
+            `http://localhost:3000/dashboard?userDeezerId=${user.userDeezerId}`
+          );
         });
       } else {
         console.log("user already available");
         deezerUser.deezerAccessToken = deezerAccessToken;
-        deezerUser.save();
-        console.log("token refreshed", deezerUser);
+        return deezerUser.save(async (err, user) => {
+          return res.redirect(
+            `http://localhost:3000/dashboard?userDeezerId=${user.userDeezerId}`
+          );
+        });
       }
     });
 
-    return res.redirect(`http://localhost:3000/dashboard#access_token=${body}`);
+    // return res.redirect(`http://localhost:3000/dashboard#access_token=${body}`);
   });
 });
 
+router.post("/storeDeezer/:userId", async function (req, res) {
+  try {
+    const { userDeezerId } = req.body;
+    const { userId } = req.params;
+    const indiUser = await User.findById(userId);
+    console.log(indiUser);
+    if (indiUser.deezerId) {
+      return res.status(401).json({
+        message: "Already connected with deezer",
+      });
+    }
+    const deezerUser = await deezerUserModel.findOne({ userDeezerId });
+    console.log(deezerUser);
+    if (deezerUser) {
+      indiUser.deezerId = deezerUser._id;
+      indiUser.save(async (err, user) => {
+        return res.status(200).json({
+          data: user,
+        });
+      });
+    }
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+});
+
 router.get("/deezerPlaylist/:userId", async function (req, res) {
-  let userPlaylists;
-  const { userId } = req.params;
-  var options = {
-    url: `https://api.deezer.com/user/${userId}/playlists`,
-  };
-  request.get(options, async function (error, response, body) {
-    const allDeezerPlaylists = JSON.parse(body);
-    const userDeezerPlaylists = await storeDeezerPlaylists.storeDeezerPlaylists(
-      allDeezerPlaylists
-    );
-    console.log(userDeezerPlaylists);
-    res.status(200).json({ data: userDeezerPlaylists });
-  });
-  // console.log("user playist response", userPlaylists);
+  try {
+    let userPlaylists;
+    const { userId } = req.params;
+    const indiUser = await User.findById(userId).populate("deezerId");
+    console.log(indiUser.deezerId.userDeezerId);
+    var options = {
+      url: `https://api.deezer.com/user/${indiUser.deezerId.userDeezerId}/playlists`,
+    };
+    request.get(options, async function (error, response, body) {
+      const allDeezerPlaylists = JSON.parse(body);
+      const userDeezerPlaylists =
+        await storeDeezerPlaylists.storeDeezerPlaylists(allDeezerPlaylists);
+      console.log(userDeezerPlaylists);
+      res.status(200).json({ data: userDeezerPlaylists });
+    });
+    // console.log("user playist response", userPlaylists);
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
 });
 
 module.exports = router;

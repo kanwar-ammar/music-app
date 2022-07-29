@@ -7,7 +7,13 @@ const deezerUser = new Schema({
     type: String,
     // required: true,
   },
-  deezerImage: {
+  name: {
+    type: String,
+  },
+  email: {
+    type: String,
+  },
+  image: {
     type: String,
     // required: true,
   },
@@ -18,9 +24,6 @@ const deezerUser = new Schema({
   deezerRefreshToken: {
     type: String,
     // required: true,
-  },
-  deezerEmail: {
-    type: String,
   },
 });
 

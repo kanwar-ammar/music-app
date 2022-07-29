@@ -8,6 +8,8 @@ const spotifyUserModel = require("../models/userSpotifyModel");
 const allPlaylists = require("../models/allPlaylistsModel");
 const storePlaylists = require("../helpers/storePlaylists");
 const validateToken = require("../middlewares/validateToken");
+var axios = require("axios");
+
 // import validateToken from "../middlewares/validateToken";
 var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
@@ -83,8 +85,6 @@ router.get("/callback", function (req, res) {
   };
 
   request.post(authOptions, async function (error, response, body) {
-    const IndiUserId = "62dcfdb2030039ad452fc283";
-    const IndiUser = await User.findById(IndiUserId);
     console.log("CLIENT _ID", client_id);
     console.log("CLIENT_SECRET,", client_secret);
     console.log("REDIRECT_URI", redirect_uri);
@@ -101,7 +101,6 @@ router.get("/callback", function (req, res) {
       // use the access token to access the Spotify Web API
       request.get(options, async function (error, response, body) {
         console.log("body in call back", body);
-        const userId = body.display_name.toLowerCase();
         const userSpotifyId = body.id;
         console.log("user spotify ID... ", userSpotifyId);
         const spotifyUser = await spotifyUserModel.findOne({ userSpotifyId });
@@ -110,13 +109,12 @@ router.get("/callback", function (req, res) {
           spotifyUser.spotifyAccessToken = access_token;
           spotifyUser.save();
           console.log("user already in database...  ", spotifyUser);
-          res.redirect(
-            `http://localhost:3000/dashboard#userSpotifyId=${IndiUser._id}`
-            // http://music-webapp.s3-website.eu-west-2.amazonaws.com
+          return res.redirect(
+            `http://localhost:3000/dashboard?userSpotifyId=${spotifyUser.userSpotifyId}`
           );
         } else {
           //  save user data here
-          const user = new spotifyUserModel({
+          const newuser = new spotifyUserModel({
             userSpotifyId: userSpotifyId,
             name: body.display_name,
             email: body.email,
@@ -127,15 +125,9 @@ router.get("/callback", function (req, res) {
             spotifyAccessToken: access_token,
             spotifyRefreshToken: refresh_token,
           });
-          console.log("saved user in database", user);
-          user.save(async (err, user) => {
-            console.log(user);
-            IndiUser.spotifyId = user._id;
-            IndiUser.save();
-
-            res.redirect(
-              `http://localhost:3000/dashboard#userSpotifyId=${IndiUser._id}`
-              // http://music-webapp.s3-website.eu-west-2.amazonaws.com
+          return newuser.save(async (err, user) => {
+            return res.redirect(
+              `http://localhost:3000/dashboard?userSpotifyId=${user.userSpotifyId}`
             );
           });
         }
@@ -152,14 +144,33 @@ router.get("/callback", function (req, res) {
   // }
 });
 
-//used in user.js
-router.get("/loggedInUser/:userId", async function (req, res) {
-  const { userId } = req.params;
-  console.log("Logged in user", userId);
-  const user = await User.findById(userId).populate("spotifyId");
-  res.status(200).json({
-    data: user,
-  });
+router.post("/storeSpotify/:userId", async function (req, res) {
+  try {
+    const { userSpotifyId } = req.body;
+    const { userId } = req.params;
+    const indiUser = await User.findById(userId);
+    console.log(indiUser);
+    if (indiUser.spotifyId) {
+      return res.status(401).json({
+        message: "Already connected with spotify",
+        data: indiUser,
+      });
+    }
+    const spotifyUser = await spotifyUserModel.findOne({ userSpotifyId });
+    console.log(spotifyUser);
+    if (spotifyUser) {
+      indiUser.spotifyId = spotifyUser._id;
+      indiUser.save(async (err, user) => {
+        return res.status(200).json({
+          data: user,
+        });
+      });
+    }
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
 });
 
 //used in playlist.js
@@ -167,7 +178,6 @@ router.get("/userPlaylists/:userId", async function (req, res) {
   const { userId } = req.params;
   console.log(userId);
   const user = await User.findById(userId).populate("spotifyId");
-  console.log("user in DB", user);
   console.log("user in DB", user.spotifyId.spotifyAccessToken);
   console.log("user in DB", user.spotifyId.spotifyRefreshToken);
   var access_tokenin = user.spotifyId.spotifyAccessToken;
@@ -265,6 +275,14 @@ router.get("/refresh_token/:userId", async function (req, res) {
   const { userId } = req.params;
   validateToken.validateToken(userId);
   res.redirect("back");
+});
+
+router.get("/connectSpotify", async function (req, response) {
+  axios
+    .get(
+      "https://accounts.spotify.com/authorize?response_type=code&client_id=e920a468f15a49ddae5075a574cddd9b&scope=user-read-private%20user-read-email%20user-modify-playback-state%20user-read-playback-position%20user-library-read%20streaming%20user-read-playback-state%20user-read-recently-played%20playlist-read-private&redirect_uri=http://localhost:8888/api/spotify/callback"
+    )
+    .then((res) => console.log(res));
 });
 
 module.exports = router;
