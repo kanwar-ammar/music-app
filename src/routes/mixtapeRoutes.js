@@ -14,9 +14,11 @@ router.post("/createMixtape/:userId", async function (req, res) {
     tracks: tracks,
     userId: userId,
   });
-  newMixtape.save();
-  res.status(200).json({
-    message: "new mixtape created",
+  await newMixtape.save((err, mixtape) => {
+    res.status(200).json({
+      message: "new mixtape created",
+      data: mixtape,
+    });
   });
 });
 
@@ -88,10 +90,10 @@ router.get("/MixtapesAllTracks/:userId", async function (req, res) {
 });
 
 router.post("/addtofavorite", async function (req, res) {
-  const { mixtape, user } = req.body;
+  const { mixtape, userId } = req.body;
   console.log("mixtape to be saved", mixtape);
-  console.log("Logged In user from Front end", user._id);
-  const indiUser = await User.findById(user._id);
+  console.log("Logged In user from Front end", userId);
+  const indiUser = await User.findById(userId);
   console.log("IndiUser", indiUser);
   indiUser.favorites.push(mixtape);
   indiUser.save();

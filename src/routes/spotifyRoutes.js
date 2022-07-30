@@ -176,7 +176,7 @@ router.post("/storeSpotify/:userId", async function (req, res) {
 //used in playlist.js
 router.get("/userPlaylists/:userId", async function (req, res) {
   const { userId } = req.params;
-  console.log(userId);
+  console.log("user Id in get spotify playlists", userId);
   const user = await User.findById(userId).populate("spotifyId");
   console.log("user in DB", user.spotifyId.spotifyAccessToken);
   console.log("user in DB", user.spotifyId.spotifyRefreshToken);
