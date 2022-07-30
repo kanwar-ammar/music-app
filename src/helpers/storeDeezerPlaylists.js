@@ -18,7 +18,6 @@ async function storeDeezerPlaylists(allDeezerPlaylists) {
     let allTracks = [];
     await axios.get(`${playlists.playlistTracks}`).then(async (res) => {
       const trackList = res.data.data;
-      //   console.log(trackList);
       let _allTracks = await trackList.map((track) => ({
         added_at: track.time_add,
         title: track.title,
@@ -26,8 +25,8 @@ async function storeDeezerPlaylists(allDeezerPlaylists) {
         image: track.md5_image,
         albumName: track.album.title,
         artists: track.artist.name,
+        uri: track.id,
       }));
-      //   allTracks.push(_allTracks)
       playlists["Tracks"] = _allTracks;
     });
   }
