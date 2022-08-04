@@ -50,8 +50,8 @@ router.get("/login", function (req, res) {
         });
       } else {
         console.log("user already available");
-        deezerUser.deezerAccessToken = deezerAccessToken;
-        return deezerUser.save(async (err, user) => {
+        savedDeezerUser.deezerAccessToken = deezerAccessToken;
+        return savedDeezerUser.save(async (err, user) => {
           return res.redirect(
             `http://localhost:3000/dashboard?userDeezerId=${user.userDeezerId}`
           );
