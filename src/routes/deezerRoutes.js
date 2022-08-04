@@ -34,6 +34,7 @@ router.get("/login", function (req, res) {
       const savedDeezerUser = await userDeezerModel.findOne({
         userDeezerId: deezerUser.id,
       });
+      console.log("user in database", savedDeezerUser);
       if (!savedDeezerUser) {
         console.log("user not found", savedDeezerUser);
         const newUser = new userDeezerModel({
@@ -52,6 +53,7 @@ router.get("/login", function (req, res) {
         });
       } else {
         console.log("user already available");
+
         savedDeezerUser.deezerAccessToken = deezerAccessToken;
         return savedDeezerUser.save(async (err, user) => {
           return res.redirect(
