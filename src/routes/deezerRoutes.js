@@ -43,7 +43,9 @@ router.get("/login", function (req, res) {
           image: deezerUser.picture,
           email: deezerUser.email,
         });
+        console.log("new user to be saved", newUser);
         return await newUser.save().then((user) => {
+          console.log("saved user", user);
           return res.redirect(
             `http://localhost:3000/dashboard?userDeezerId=${user.userDeezerId}`
           );
