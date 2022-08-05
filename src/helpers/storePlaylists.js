@@ -70,6 +70,7 @@ async function storePlaylists(userPlaylists, access_tokenin, req, res, next) {
           albumName: track.track.album.name,
           artists: track.track.artists.map((a) => a.name),
           uri: track.track.uri,
+          type: "spotify",
         }));
         allTracks.push((allUserPlaylists[x].Tracks = _allTracks));
       });

@@ -26,6 +26,7 @@ async function storeDeezerPlaylists(allDeezerPlaylists) {
         albumName: track.album.title,
         artists: track.artist.name,
         uri: track.id,
+        type: "deezer",
       }));
       playlists["Tracks"] = _allTracks;
     });
