@@ -19,36 +19,60 @@ router.post("/testapi", async function (req, res) {
   });
 });
 
-router.post("/follow/:userSpotifyId", async function (req, res) {
+router.post("/follow/:userId", async function (req, res) {
   try {
-    const { userSpotifyId } = req.params;
-    const { followUser } = req.body;
-    const user = await User.findOne({ userSpotifyId });
-    const userFollowed = await User.findOne({
-      userSpotifyId: followUser.userSpotifyId,
-    });
-    console.log(userSpotifyId, followUser.userSpotifyId);
-    if (userSpotifyId === followUser.userSpotifyId) {
+    const { followUserId } = req.body;
+    const { userId } = req.params;
+    const user = await User.findOne(
+      { _id: userId },
+      {
+        password: 0,
+        favorites: 0,
+        deezerId: 0,
+        spotifyId: 0,
+      }
+    );
+    const userFollowed = await User.findById(
+      { _id: followUserId },
+      {
+        passsord: 0,
+        favorites: 0,
+        deezerId: 0,
+        spotifyId: 0,
+      }
+    );
+    if (userId === followUserId) {
       return res.status(400).json({
         message: "a user cannot follow himself",
       });
     }
     for (var followers of user.following) {
-      if (followers.userSpotifyId === followUser.userSpotifyId) {
+      if (followers._id === followUserId) {
         return res.status(400).json({
           message: "user is already followed",
         });
       }
     }
-    user.following.push(followUser);
-    userFollowed.followers.push(user);
+
+    console.log(
+      "logged in user",
+      user.following,
+      "user to be followed",
+      userFollowed.followers
+    );
+    // user.following.push({ name: userFollowed.name, email: userFollowed.email });
+    user.following.push(followUserId);
     user.save();
+    // userFollowed.followers.push({ name: user.name, email: user.email });
+    userFollowed.followers.push(userId);
     userFollowed.save();
-    res.status(200).json({
+
+    return res.status(200).json({
       message: "user followed successfully",
       data: user,
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json({
       message: err.message,
     });
@@ -60,6 +84,32 @@ router.get("/loggedInUser/:userId", async function (req, res) {
   const { userId } = req.params;
   console.log("Logged in user", userId);
   const user = await User.findById(userId).populate("spotifyId deezerId");
+  console.log(user.following);
+  const userFollowing = await User.find(
+    { _id: { $in: user.following } },
+    {
+      password: 0,
+      favorites: 0,
+      deezerId: 0,
+      spotifyId: 0,
+      followers: 0,
+      following: 0,
+    }
+  );
+  const userFollowed = await User.find(
+    { _id: { $in: user.followers } },
+    {
+      password: 0,
+      favorites: 0,
+      deezerId: 0,
+      spotifyId: 0,
+      followers: 0,
+      following: 0,
+    }
+  );
+  console.log("Followers", userFollowed, "Following", userFollowing);
+  user["followers"] = userFollowed;
+  user["following"] = userFollowing;
   res.status(200).json({
     data: user,
   });

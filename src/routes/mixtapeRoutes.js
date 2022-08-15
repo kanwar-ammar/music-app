@@ -22,6 +22,30 @@ router.post("/createMixtape/:userId", async function (req, res) {
   });
 });
 
+router.post("/addTrack/:mixtapeId", async function (req, res) {
+  try {
+    const { track } = req.body;
+    const { mixtapeId } = req.params;
+    const mixtape = await Mixtape.findById(mixtapeId);
+    if (mixtape) {
+      mixtape.tracks.push(track);
+      return mixtape.save((err, mixtape) => {
+        return res.status(200).json({
+          message: "track added",
+          data: mixtape,
+        });
+      });
+    }
+    return res.status(400).json({
+      message: "no mixtape found",
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+});
+
 router.get("/allUserMixtapes/:userId", async function (req, res) {
   const { userId } = req.params;
   const mixtapes = await Mixtape.find({ userId: userId });

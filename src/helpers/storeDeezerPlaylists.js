@@ -18,6 +18,7 @@ async function storeDeezerPlaylists(allDeezerPlaylists) {
     let allTracks = [];
     await axios.get(`${playlists.playlistTracks}`).then(async (res) => {
       const trackList = res.data.data;
+      console.log(trackList[0]);
       let _allTracks = await trackList.map((track) => ({
         added_at: track.time_add,
         title: track.title,
