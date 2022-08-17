@@ -46,9 +46,6 @@ async function signup(req, res) {
           return res.status(400).send(err.message);
         }
       });
-      return res
-        .status(403)
-        .json({ message: "Email Already exists", error: true });
     }
   } catch (err) {
     console.log(err);

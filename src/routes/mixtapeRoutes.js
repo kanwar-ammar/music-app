@@ -14,7 +14,7 @@ router.post("/createMixtape/:userId", async function (req, res) {
     tracks: tracks,
     userId: userId,
   });
-  await newMixtape.save((err, mixtape) => {
+  newMixtape.save((err, mixtape) => {
     res.status(200).json({
       message: "new mixtape created",
       data: mixtape,

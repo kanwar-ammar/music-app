@@ -35,7 +35,7 @@ router.post("/follow/:userId", async function (req, res) {
     const userFollowed = await User.findById(
       { _id: followUserId },
       {
-        passsord: 0,
+        password: 0,
         favorites: 0,
         deezerId: 0,
         spotifyId: 0,
@@ -46,24 +46,21 @@ router.post("/follow/:userId", async function (req, res) {
         message: "a user cannot follow himself",
       });
     }
-    for (var followers of user.following) {
-      if (followers._id === followUserId) {
+    for (var followingId of user.following) {
+      if (followingId === followUserId) {
         return res.status(400).json({
           message: "user is already followed",
         });
       }
     }
-
     console.log(
       "logged in user",
       user.following,
       "user to be followed",
       userFollowed.followers
     );
-    // user.following.push({ name: userFollowed.name, email: userFollowed.email });
     user.following.push(followUserId);
     user.save();
-    // userFollowed.followers.push({ name: user.name, email: user.email });
     userFollowed.followers.push(userId);
     userFollowed.save();
 

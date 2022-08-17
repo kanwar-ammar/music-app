@@ -5,7 +5,6 @@ const Schema = mongoose.Schema;
 const spotifyUser = new Schema({
   userSpotifyId: {
     type: String,
-    // required: true,
   },
   name: {
     type: String,
@@ -15,15 +14,12 @@ const spotifyUser = new Schema({
   },
   image: {
     type: String,
-    // required: true,
   },
   spotifyAccessToken: {
     type: String,
-    // required: true,
   },
   spotifyRefreshToken: {
     type: String,
-    // required: true,
   },
 });
 

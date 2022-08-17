@@ -100,18 +100,23 @@ router.get("/deezerPlaylist/:userId", async function (req, res) {
     let userPlaylists;
     const { userId } = req.params;
     const indiUser = await User.findById(userId).populate("deezerId");
-    console.log(indiUser.deezerId.userDeezerId);
-    var options = {
-      url: `https://api.deezer.com/user/${indiUser.deezerId.userDeezerId}/playlists`,
-    };
-    request.get(options, async function (error, response, body) {
-      const allDeezerPlaylists = JSON.parse(body);
-      const userDeezerPlaylists =
-        await storeDeezerPlaylists.storeDeezerPlaylists(allDeezerPlaylists);
-      console.log(userDeezerPlaylists);
-      res.status(200).json({ data: userDeezerPlaylists });
-    });
-    // console.log("user playist response", userPlaylists);
+    if (indiUser.deezerId) {
+      console.log(indiUser.deezerId.userDeezerId);
+      var options = {
+        url: `https://api.deezer.com/user/${indiUser.deezerId.userDeezerId}/playlists`,
+      };
+      request.get(options, async function (error, response, body) {
+        const allDeezerPlaylists = JSON.parse(body);
+        const userDeezerPlaylists =
+          await storeDeezerPlaylists.storeDeezerPlaylists(allDeezerPlaylists);
+        console.log(userDeezerPlaylists);
+        res.status(200).json({ data: userDeezerPlaylists });
+      });
+    } else {
+      res.status(400).json({
+        message: "deezer not connected",
+      });
+    }
   } catch (err) {
     res.status(400).json({
       message: err.message,

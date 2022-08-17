@@ -4,14 +4,10 @@ require("dotenv").config();
 var request = require("request");
 var querystring = require("querystring");
 const User = require("../models/userModel");
-const allPlaylists = require("../models/allPlaylistsModel");
 const userSpotifyModel = require("../models/userSpotifyModel");
 
-var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
-var redirect_uri = "http://localhost:8888/api/spotify/callback"; // Your redirect uri
-//18.132.114.99
 
 async function validateToken(userId, req, res, next) {
   console.log("inside validate token", userId);

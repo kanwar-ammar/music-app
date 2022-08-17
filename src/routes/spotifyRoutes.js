@@ -10,7 +10,6 @@ const storePlaylists = require("../helpers/storePlaylists");
 const validateToken = require("../middlewares/validateToken");
 var axios = require("axios");
 
-// import validateToken from "../middlewares/validateToken";
 var stateKey = "spotify_auth_state";
 var client_id = process.env.CLIENT_ID;
 var client_secret = process.env.CLIENT_SECRET;
@@ -178,96 +177,51 @@ router.get("/userPlaylists/:userId", async function (req, res) {
   const { userId } = req.params;
   console.log("user Id in get spotify playlists", userId);
   const user = await User.findById(userId).populate("spotifyId");
-  console.log("user in DB", user.spotifyId.spotifyAccessToken);
-  console.log("user in DB", user.spotifyId.spotifyRefreshToken);
-  var access_tokenin = user.spotifyId.spotifyAccessToken;
-  const refresh_token = user.spotifyId.spotifyRefreshToken;
+  console.log(user);
+  if (user.spotifyId) {
+    console.log("user in DB", user.spotifyId.spotifyRefreshToken);
+    var access_tokenin = user.spotifyId.spotifyAccessToken;
+    const refresh_token = user.spotifyId.spotifyRefreshToken;
 
-  let allTracks = []; //all tracks of user with their respective playlists are stored here
-  var authOptions = {
-    url:
-      "https://api.spotify.com/v1/users/" +
-      user.spotifyId.userSpotifyId +
-      "/playlists",
-    headers: { Authorization: "Bearer " + access_tokenin },
-    json: true,
-  };
-  request.get(authOptions, async function (error, response, body) {
-    console.log("error in user playlists", body.error);
-    if (body.error) {
-      if (body.error.message === "The access token expired") {
-        console.log("inside userPlaylists");
-        res.redirect(`/api/spotify/refresh_token/${userId}`);
-        // validateToken.validateToken(userId);
+    let allTracks = []; //all tracks of user with their respective playlists are stored here
+    var authOptions = {
+      url:
+        "https://api.spotify.com/v1/users/" +
+        user.spotifyId.userSpotifyId +
+        "/playlists",
+      headers: { Authorization: "Bearer " + access_tokenin },
+      json: true,
+    };
+    request.get(authOptions, async function (error, response, body) {
+      console.log("error in user playlists", body.error);
+      if (body.error) {
+        if (body.error.message === "The access token expired") {
+          console.log("inside userPlaylists");
+          res.redirect(`/api/spotify/refresh_token/${userId}`);
+        }
+      } else {
+        if (!error && response.statusCode === 200) {
+          const userPlaylists = body.items;
+          const result = await storePlaylists.storePlaylists(
+            userPlaylists,
+            access_tokenin
+          );
+          console.log("result in user playlists", result);
+          const allUserPlaylists = {
+            userId: userId,
+            Playlists: result,
+          };
+          res.status(200).json({
+            data: allUserPlaylists,
+          });
+        }
       }
-    } else {
-      if (!error && response.statusCode === 200) {
-        const userPlaylists = body.items;
-        const result = await storePlaylists.storePlaylists(
-          userPlaylists,
-          access_tokenin
-        );
-        console.log("result in user playlists", result);
-        // userPlaylists.map(function (playlist) {
-        //   const playlistName = playlist.name;
-        //   const playlistId = playlist.id;
-        //   const playlistImage = playlist.images[0]
-        //     ? playlist.images[0].url
-        //     : "https://pbs.twimg.com/profile_images/558556141605511168/2JDJX8SQ_400x400.png";
-        //   const noOfTracks = playlist.tracks.total;
-        //   const playlistOwner = playlist.owner.display_name;
-        //   const getTracks = {
-        //     url:
-        //       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks",
-        //     headers: { Authorization: "Bearer " + access_tokenin },
-        //     json: true,
-        //   };
-        //   request.get(getTracks, function (error, response, body) {
-        //     if (!error && response.statusCode === 200) {
-        //       let _allTracks = [];
-        //       body.items.map((track) => {
-        //         _allTracks.push({
-        //           added_at: track.added_at,
-        //           title: track.track.name,
-        //           duration: track.track.duration_ms,
-        //           image: track.track.album.images[0].url,
-        //           albumName: track.track.album.name,
-        //           artists: track.track.artists.map((a) => a.name),
-        //           spotifyUri: track.track.uri,
-        //         });
-        //       });
-        //       allTracks.push({
-        //         playlistName: playlistName,
-        //         playlistId: playlistId,
-        //         playlistOwner: playlistOwner,
-        //         playlistImage: playlistImage,
-        //         noOfTracks: noOfTracks,
-        //         Tracks: _allTracks,
-        //       });
-        //     }
-        //   });
-        // });
-        // setTimeout(function () {
-        //   const allUserPlaylists = new allPlaylists({
-        //     userId: userId,
-        //     Playlists: allTracks,
-        //   });
-        //   // allUserPlaylists.save();
-        //   // console.log("all playlists with tracks saved", allUserPlaylists);
-        //   res.status(200).json({
-        //     data: allUserPlaylists,
-        //   });
-        // }, 3000);
-        const allUserPlaylists = {
-          userId: userId,
-          Playlists: result,
-        };
-        res.status(200).json({
-          data: allUserPlaylists,
-        });
-      }
-    }
-  });
+    });
+  } else {
+    res.status(400).json({
+      message: "spotify account not connected",
+    });
+  }
 });
 
 //api used for refreshing spotify access token of a user because it expires after some time
@@ -275,6 +229,31 @@ router.get("/refresh_token/:userId", async function (req, res) {
   const { userId } = req.params;
   validateToken.validateToken(userId);
   res.redirect("back");
+});
+
+router.get("/validateToken/:userId", async function (req, res) {
+  const { userId } = req.params;
+  const user = await User.findById(userId).populate("spotifyId");
+  const spotifyUser = await spotifyUserModel.findById(user.spotifyId._id);
+  var options = {
+    url: "https://api.spotify.com/v1/me",
+    headers: { Authorization: "Bearer " + spotifyUser.spotifyAccessToken },
+    json: true,
+  };
+  request.get(options, async function (error, response, body) {
+    if (body.error) {
+      if (body.error.message === "The access token expired") {
+        validateToken.validateToken(userId);
+        return res.status(200).json({
+          message: "access Token refreshed",
+        });
+      }
+    } else {
+      return res.status(200).json({
+        message: "no need to refresh Token",
+      });
+    }
+  });
 });
 
 router.get("/connectSpotify", async function (req, response) {

@@ -5,13 +5,11 @@ const Schema = mongoose.Schema;
 const user = new Schema({
   name: {
     type: String,
-    // unique: true,
     required: true,
     trim: true,
   },
   email: {
     type: String,
-    // unique: true,s
     required: true,
     lowercase: true,
     trim: true,
@@ -22,7 +20,6 @@ const user = new Schema({
   },
   image: {
     type: String,
-    // required: true,
   },
   deezerId: {
     type: mongoose.Schema.Types.ObjectId,
